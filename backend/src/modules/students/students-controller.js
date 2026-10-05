@@ -4,6 +4,8 @@ const {addOrUpdateStudent, findAllStudents} = require("./students-repository");
 
 const handleGetAllStudents = asyncHandler(async (req, res) => {
     //write your code
+    const payload = req.body
+    console.log(payload)
 
 });
 
@@ -11,6 +13,16 @@ const handleAddStudent = asyncHandler(async (req, res) => {
     //write your code
     const payload = req.body
     console.log(payload)
+
+    const errors = checkAddStudentPayload(payload)
+    if (errors.length > 0){
+        res.status(400).json({
+            status: false,
+            message: errors.join(', ')
+        });
+        return;
+    }
+
     const result = await addNewStudent(payload)
         res.status(201).json({
         status: result.status,
@@ -19,6 +31,55 @@ const handleAddStudent = asyncHandler(async (req, res) => {
     });
 
 });
+
+const isAllDigits = (str) => /^\d+$/.test(str);
+
+const checkAddStudentPayload = (payload) => {
+    const errors = [];
+
+    if (!payload.name || !payload.name.trim()) {
+        errors.push('Name is required');
+    }
+    if (!payload.phone || !isAllDigits(payload.phone)){
+        errors.push('Phone number must be digits')
+    }
+    if (!payload.email || !payload.email.trim()) {
+        errors.push('Email is required');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+        errors.push('Email format is invalid');
+    }
+    if (!payload.class || !payload.class.trim()) {
+        errors.push('Class is required');
+    }
+    if (!payload.section || !payload.section.trim()) {
+        errors.push('Section is required');
+    }
+    if (!payload.roll || !payload.roll.toString().trim()) {
+        errors.push('Roll number is required');
+    }
+    if(!isAllDigits(payload.roll.toString())){
+        errors.push('Roll number must be digits')
+    }
+    if (!payload.fatherName || !payload.fatherName.trim()) {
+        errors.push('Father name is required');
+    }
+    if (!payload.guardianName || !payload.guardianName.trim()) {
+        errors.push('Guardian name is required');
+    }
+    if (!payload.guardianPhone || !isAllDigits(payload.guardianPhone)){
+        errors.push('Guadian phone number must be digits')
+    }
+    if (!payload.dob) {
+        errors.push('Date of birth is required');
+    }
+    if (!payload.admissionDate) {
+        errors.push('Admission date is required');
+    }
+
+    return errors;
+};
+
+
 
 const handleUpdateStudent = asyncHandler(async (req, res) => {
     //write your code
