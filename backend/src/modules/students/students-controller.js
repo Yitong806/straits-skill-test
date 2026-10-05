@@ -30,14 +30,11 @@ const handleGetAllStudents = asyncHandler(async (req, res) => {
         parsed['className'] = classesDetail['name']
     }
 
-    const result = await findAllStudents(parsed)
-    console.log('Fetched data', result)
+    const students = await findAllStudents(parsed)
+    console.log('Fetched data', students)
     res.status(200).json({
-        status: result.status,
-        data: result,
-        message: 'Students fetched successfully'
+        students: students
     });
-
 });
 
 const handleAddStudent = asyncHandler(async (req, res) => {
