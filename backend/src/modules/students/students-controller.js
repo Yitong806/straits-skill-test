@@ -1,18 +1,49 @@
 const asyncHandler = require("express-async-handler");
 const { getAllStudents, addNewStudent, getStudentDetail, setStudentStatus, updateStudent } = require("./students-service");
 const {addOrUpdateStudent, findAllStudents} = require("./students-repository");
+const {getAllClasses, getClassDetail} = require("../classes/classes-repository");
 
 const handleGetAllStudents = asyncHandler(async (req, res) => {
     //write your code
-    const payload = req.body
-    console.log(payload)
+    const payload = req.query
+    const keys = Object.keys(payload)
+    const parsed = {};
+    if (keys.length > 0){
+        const firstKey = keys[0]
+        const firstValue = payload[firstKey]
+        const targetString = `${firstKey}=${firstValue}`
+
+        // console.log(targetString)
+        targetString.split(',').forEach(pair => {
+            const [key, ...valueParts] = pair.split('=');
+            if (key && valueParts.length > 0) {
+                parsed[key.trim()] = decodeURIComponent(valueParts.join('=')).trim();
+            }
+        });
+    }
+    // console.log(parsed)
+
+    if ('class' in parsed){
+        const id = parsed['class']
+        const classesDetail = await getClassDetail(id)
+        // console.log('classDetail', classesDetail)
+        parsed['className'] = classesDetail['name']
+    }
+
+    const result = await findAllStudents(parsed)
+    console.log('Fetched data', result)
+    res.status(200).json({
+        status: result.status,
+        data: result,
+        message: 'Students fetched successfully'
+    });
 
 });
 
 const handleAddStudent = asyncHandler(async (req, res) => {
     //write your code
     const payload = req.body
-    console.log(payload)
+    // console.log(payload)
 
     const errors = checkAddStudentPayload(payload)
     if (errors.length > 0){
@@ -24,7 +55,7 @@ const handleAddStudent = asyncHandler(async (req, res) => {
     }
 
     const result = await addNewStudent(payload)
-        res.status(201).json({
+    res.status(201).json({
         status: result.status,
         data: { userId: result.userId },
         message: result.message
