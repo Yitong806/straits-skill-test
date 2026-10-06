@@ -129,7 +129,7 @@ const handleUpdateStudent = asyncHandler(async (req, res) => {
         return;
     }
 
-    console.log({ ...payload, userId: Number(id) })
+    // console.log({ ...payload, userId: Number(id) })
 
     const result = await updateStudent({ ...payload, userId: Number(id) });
 
