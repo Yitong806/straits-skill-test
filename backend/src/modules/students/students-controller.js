@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const { getAllStudents, addNewStudent, getStudentDetail, setStudentStatus, updateStudent } = require("./students-service");
-const {addOrUpdateStudent, findAllStudents} = require("./students-repository");
+const {addOrUpdateStudent, findAllStudents, findStudentDetail} = require("./students-repository");
 const {getAllClasses, getClassDetail} = require("../classes/classes-repository");
 
 const handleGetAllStudents = asyncHandler(async (req, res) => {
@@ -31,7 +31,7 @@ const handleGetAllStudents = asyncHandler(async (req, res) => {
     }
 
     const students = await findAllStudents(parsed)
-    console.log('Fetched data', students)
+    // console.log('Fetched data', students)
     res.status(200).json({
         students: students
     });
@@ -42,7 +42,7 @@ const handleAddStudent = asyncHandler(async (req, res) => {
     const payload = req.body
     // console.log(payload)
 
-    const errors = checkAddStudentPayload(payload)
+    const errors = checkStudentPayload(payload)
     if (errors.length > 0){
         res.status(400).json({
             status: false,
@@ -62,7 +62,7 @@ const handleAddStudent = asyncHandler(async (req, res) => {
 
 const isAllDigits = (str) => /^\d+$/.test(str);
 
-const checkAddStudentPayload = (payload) => {
+const checkStudentPayload = (payload) => {
     const errors = [];
 
     if (!payload.name || !payload.name.trim()) {
@@ -112,16 +112,75 @@ const checkAddStudentPayload = (payload) => {
 const handleUpdateStudent = asyncHandler(async (req, res) => {
     //write your code
 
+    // TODO: Refer to addstudent payload
+
 });
 
 const handleGetStudentDetail = asyncHandler(async (req, res) => {
     //write your code
+    console.log(req.params)
+    const {id} = req.params
 
+    if (!id) {
+        res.status(400).json({
+            status: false,
+            message: 'Student ID is required'
+        });
+        return;
+    }
+
+    if (!isAllDigits(id)){
+        res.status(400).json({
+            status: false,
+            message: 'Student ID must be digits'
+        });
+        return;
+    }
+
+    const student = await findStudentDetail(Number(id));
+
+    // console.log('Fetched Data',student)
+    if (!student) {
+        res.status(404).json({
+            status: false,
+            message: 'Student not found'
+        });
+        return;
+    }
+
+    res.status(200).json(student);
 });
 
 const handleStudentStatus = asyncHandler(async (req, res) => {
-    //write your code
+    const { id } = req.params;
+    const { status } = req.body;
 
+    if (!id) {
+        res.status(400).json({
+            status: false,
+            message: 'Student ID is required'
+        });
+        return;
+    }
+
+    if (status === undefined || status === null) {
+        res.status(400).json({
+            status: false,
+            message: 'Status is required'
+        });
+        return;
+    }
+
+    const result = await setStudentStatus({
+        userId: Number(id),
+        reviewerId: req.user.id,
+        status
+    });
+
+    res.status(200).json({
+        status: true,
+        message: result.message
+    });
 });
 
 module.exports = {
