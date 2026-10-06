@@ -107,7 +107,7 @@ const checkStudentPayload = (payload) => {
         errors.push('Guardian name is required');
     }
     if (!payload.guardianPhone){
-        errors.push('Guadian phone number is required')
+        errors.push('Guardian phone number is required')
     }
     if(!isAllDigits(payload.guardianPhone)){
         errors.push('Guadian phone number must be digits')
