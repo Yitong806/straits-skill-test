@@ -110,7 +110,7 @@ const checkStudentPayload = (payload) => {
         errors.push('Guardian phone number is required')
     }
     if(!isAllDigits(payload.guardianPhone)){
-        errors.push('Guadian phone number must be digits')
+        errors.push('Guardian phone number must be digits')
     }
     if (!payload.dob) {
         errors.push('Date of birth is required');
