@@ -1,7 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const { getAllStudents, addNewStudent, getStudentDetail, setStudentStatus, updateStudent } = require("./students-service");
-const {addOrUpdateStudent, findAllStudents, findStudentDetail} = require("./students-repository");
-const {getAllClasses, getClassDetail} = require("../classes/classes-repository");
+const {fetchClassDetail} = require("../classes/classes-service");
 
 const handleGetAllStudents = asyncHandler(async (req, res) => {
     //write your code
@@ -25,12 +24,12 @@ const handleGetAllStudents = asyncHandler(async (req, res) => {
 
     if ('class' in parsed){
         const id = parsed['class']
-        const classesDetail = await getClassDetail(id)
+        const classesDetail = await fetchClassDetail(id)
         // console.log('classDetail', classesDetail)
         parsed['className'] = classesDetail['name']
     }
 
-    const students = await findAllStudents(parsed)
+    const students = await getAllStudents(parsed)
     // console.log('Fetched data', students)
     res.status(200).json({
         students: students
@@ -110,15 +109,40 @@ const checkStudentPayload = (payload) => {
 
 
 const handleUpdateStudent = asyncHandler(async (req, res) => {
-    //write your code
+    const { id } = req.params;
+    const payload = req.body;
 
-    // TODO: Refer to addstudent payload
+    if (!id) {
+        res.status(400).json({
+            status: false,
+            message: 'Student ID is required'
+        });
+        return;
+    }
 
+    const errors = checkStudentPayload(payload);
+    if (errors.length > 0) {
+        res.status(400).json({
+            status: false,
+            message: errors.join(', ')
+        });
+        return;
+    }
+
+    console.log({ ...payload, userId: Number(id) })
+
+    const result = await updateStudent({ ...payload, userId: Number(id) });
+
+    res.status(200).json({
+        status: result.status,
+        data: { userId: result.userId },
+        message: result.message
+    });
 });
 
 const handleGetStudentDetail = asyncHandler(async (req, res) => {
     //write your code
-    console.log(req.params)
+    // console.log(req.params)
     const {id} = req.params
 
     if (!id) {
@@ -137,7 +161,7 @@ const handleGetStudentDetail = asyncHandler(async (req, res) => {
         return;
     }
 
-    const student = await findStudentDetail(Number(id));
+    const student = await getStudentDetail(Number(id));
 
     // console.log('Fetched Data',student)
     if (!student) {
