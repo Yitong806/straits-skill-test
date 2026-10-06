@@ -4,23 +4,28 @@ const {fetchClassDetail} = require("../classes/classes-service");
 
 const handleGetAllStudents = asyncHandler(async (req, res) => {
     //write your code
+
+    /* It seems that req.query is organized in a strange form such as { class: '2,section=section1' }?
+    *  so it would be better to first change it into string like 'class=2,section=section1'
+    *  then change it into dict like {class: '2', section: 'section1'}
+    *
+    *  Suggestion: modify the data form passed from the frontend.
+    *
+    *  however class's value is classId, so we need to fetch class detail first and extract the name field.
+    * */
     const payload = req.query
     const keys = Object.keys(payload)
     const parsed = {};
-    if (keys.length > 0){
-        const firstKey = keys[0]
-        const firstValue = payload[firstKey]
-        const targetString = `${firstKey}=${firstValue}`
-
-        // console.log(targetString)
+    Object.entries(payload).forEach(([key, value]) => {
+        const targetString = `${key}=${value}`
         targetString.split(',').forEach(pair => {
             const [key, ...valueParts] = pair.split('=');
             if (key && valueParts.length > 0) {
                 parsed[key.trim()] = decodeURIComponent(valueParts.join('=')).trim();
             }
         });
-    }
-    // console.log(parsed)
+    })
+    // console.log('parsed', parsed)
 
     if ('class' in parsed){
         const id = parsed['class']
@@ -37,6 +42,13 @@ const handleGetAllStudents = asyncHandler(async (req, res) => {
 });
 
 const handleAddStudent = asyncHandler(async (req, res) => {
+    /*
+    * First check whether the information is completed correctly.
+    * If not, then show detailed information to users to avoid confusion.
+    *
+    * After parameters checking, directly use addNewStudent.
+    * Notice that the status code should be 201, not 200.
+    * */
     //write your code
     const payload = req.body
     // console.log(payload)
@@ -90,10 +102,19 @@ const checkStudentPayload = (payload) => {
     if (!payload.fatherName || !payload.fatherName.trim()) {
         errors.push('Father name is required');
     }
+    if (payload.fatherPhone && !isAllDigits(payload.fatherPhone)) {
+        errors.push('Father phone number must be digits');
+    }
+    if (payload.motherName && payload.motherPhone && !isAllDigits(payload.motherPhone)) {
+        errors.push('Mother phone number must be digits');
+    }
     if (!payload.guardianName || !payload.guardianName.trim()) {
         errors.push('Guardian name is required');
     }
-    if (!payload.guardianPhone || !isAllDigits(payload.guardianPhone)){
+    if (!payload.guardianPhone){
+        errors.push('Guadian phone number is required')
+    }
+    if(!isAllDigits(payload.guardianPhone)){
         errors.push('Guadian phone number must be digits')
     }
     if (!payload.dob) {
@@ -109,6 +130,12 @@ const checkStudentPayload = (payload) => {
 
 
 const handleUpdateStudent = asyncHandler(async (req, res) => {
+    /*
+    * Similar logic with handleAddStudent
+    *
+    * TODO: I do not understand why the frontend requires roll field must be not digits?
+    * */
+
     const { id } = req.params;
     const payload = req.body;
 
@@ -141,8 +168,37 @@ const handleUpdateStudent = asyncHandler(async (req, res) => {
 });
 
 const handleGetStudentDetail = asyncHandler(async (req, res) => {
-    //write your code
+    // write your code
     // console.log(req.params)
+
+    /*
+    * First check the data form correctness of studentId
+    * the data structure required by frontend seems like:
+[
+  {
+    id: 6,
+    name: 'WANG Yitong',
+    email: 'yitong.wang.ieee@gmail.com',
+    lastLogin: null,
+    systemAccess: false
+  },
+  {
+    id: 7,
+    name: 'zhang',
+    email: 'zhang.wang.ieee@gmail.com',
+    lastLogin: null,
+    systemAccess: false
+  },
+  {
+    id: 9,
+    name: 'az',
+    email: 'yitong.wang.ieee1@gmail.com',
+    lastLogin: null,
+    systemAccess: false
+  }
+]
+    * so directly return the data structure from getStudentDetail
+    * */
     const {id} = req.params
 
     if (!id) {
@@ -176,6 +232,8 @@ const handleGetStudentDetail = asyncHandler(async (req, res) => {
 });
 
 const handleStudentStatus = asyncHandler(async (req, res) => {
+    /*
+    * Notice the reviewerId is located in req.user*/
     const { id } = req.params;
     const { status } = req.body;
 
@@ -195,10 +253,12 @@ const handleStudentStatus = asyncHandler(async (req, res) => {
         return;
     }
 
+    console.log(status)
+
     const result = await setStudentStatus({
         userId: Number(id),
         reviewerId: req.user.id,
-        status
+        status: status
     });
 
     res.status(200).json({
