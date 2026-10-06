@@ -25,17 +25,14 @@ const handleGetAllStudents = asyncHandler(async (req, res) => {
             }
         });
     })
-    // console.log('parsed', parsed)
 
     if ('class' in parsed){
         const id = parsed['class']
         const classesDetail = await fetchClassDetail(id)
-        // console.log('classDetail', classesDetail)
         parsed['className'] = classesDetail['name']
     }
 
     const students = await getAllStudents(parsed)
-    // console.log('Fetched data', students)
     res.status(200).json({
         students: students
     });
@@ -51,7 +48,6 @@ const handleAddStudent = asyncHandler(async (req, res) => {
     * */
     //write your code
     const payload = req.body
-    // console.log(payload)
 
     const errors = checkStudentPayload(payload)
     if (errors.length > 0){
@@ -93,11 +89,10 @@ const checkStudentPayload = (payload) => {
     if (!payload.section || !payload.section.trim()) {
         errors.push('Section is required');
     }
-    if (!payload.roll || !payload.roll.toString().trim()) {
+    if (payload.roll === undefined || payload.roll === null || payload.roll.toString().trim() === '') {
         errors.push('Roll number is required');
-    }
-    if(!isAllDigits(payload.roll.toString())){
-        errors.push('Roll number must be digits')
+    } else if (!isAllDigits(payload.roll.toString())) {
+        errors.push('Roll number must be digits');
     }
     if (!payload.fatherName || !payload.fatherName.trim()) {
         errors.push('Father name is required');
@@ -132,9 +127,10 @@ const checkStudentPayload = (payload) => {
 const handleUpdateStudent = asyncHandler(async (req, res) => {
     /*
     * Similar logic with handleAddStudent
-    *
-    * TODO: I do not understand why the frontend requires roll field must be not digits?
-    * */
+    * Frontend validation incorrectly rejects pure digits for roll field.
+    * This is a frontend issue — backend correctly enforces numeric roll.
+    * TODO: frontend roll validation should be fixed to accept digits.
+    */
 
     const { id } = req.params;
     const payload = req.body;
@@ -156,7 +152,6 @@ const handleUpdateStudent = asyncHandler(async (req, res) => {
         return;
     }
 
-    // console.log({ ...payload, userId: Number(id) })
 
     const result = await updateStudent({ ...payload, userId: Number(id) });
 
@@ -169,34 +164,10 @@ const handleUpdateStudent = asyncHandler(async (req, res) => {
 
 const handleGetStudentDetail = asyncHandler(async (req, res) => {
     // write your code
-    // console.log(req.params)
 
     /*
     * First check the data form correctness of studentId
     * the data structure required by frontend seems like:
-[
-  {
-    id: 6,
-    name: 'WANG Yitong',
-    email: 'yitong.wang.ieee@gmail.com',
-    lastLogin: null,
-    systemAccess: false
-  },
-  {
-    id: 7,
-    name: 'zhang',
-    email: 'zhang.wang.ieee@gmail.com',
-    lastLogin: null,
-    systemAccess: false
-  },
-  {
-    id: 9,
-    name: 'az',
-    email: 'yitong.wang.ieee1@gmail.com',
-    lastLogin: null,
-    systemAccess: false
-  }
-]
     * so directly return the data structure from getStudentDetail
     * */
     const {id} = req.params
@@ -219,7 +190,6 @@ const handleGetStudentDetail = asyncHandler(async (req, res) => {
 
     const student = await getStudentDetail(Number(id));
 
-    // console.log('Fetched Data',student)
     if (!student) {
         res.status(404).json({
             status: false,
@@ -252,8 +222,6 @@ const handleStudentStatus = asyncHandler(async (req, res) => {
         });
         return;
     }
-
-    console.log(status)
 
     const result = await setStudentStatus({
         userId: Number(id),
